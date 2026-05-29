@@ -1,7 +1,7 @@
 # MagicSquare_XX
 
 4×4 마방진(1~16)을 다루는 학습·실습 프로젝트입니다.  
-**불변식 판정·재현 가능한 절차·명시적 계약**을 ECB 아키텍처와 **TDD(Dual-Track)** 로 구현합니다.
+현재 단계는 **RED/TDD**이며, “한 장의 표를 만드는 것”보다 **불변식 판정·재현 가능한 절차·명시적 계약**을 다루는 것을 목표로 합니다.
 
 ---
 
@@ -9,14 +9,11 @@
 
 | 항목 | 상태 |
 |------|------|
-| 문제 정의 (STEP 1~5) | 완료 — [Report/01](Report/01.Problem-Definition-Report.md) |
-| PRD·테스트 계획 | [docs/test_plan.md](docs/test_plan.md) (AC-FR-01-01 중심) |
-| ECB 스켈레톤 (`src/`) | Boundary·Control 스텁, Entity `user` 샘플 |
-| TDD RED (전체) | Boundary 36건 + Entity 12건 + Report/08 AC-FR-01-01 25건 |
-| TDD GREEN (진행 중) | **AC-FR-01-01 `grid=None`** — `validate_grid` 분기만 통과 (6건) |
-| GUI (`boundary/screen/`) | 미구현 |
-
-**최근 pytest (Boundary + `test_user`):** 16 passed · 25 failed · Entity Track B 4파일 collection ERROR (`src.entity.services` 미생성)
+| 문제 정의 (STEP 1~5) | 완료 |
+| 상세 보고서 | [Report/01.Problem-Definition-Report.md](Report/01.Problem-Definition-Report.md) |
+| 테스트 계획 | [docs/test_plan.md](docs/test_plan.md) |
+| 구현 | RED 진행 중 (Boundary/Control stub, Entity 미구현) |
+| 현재 브랜치 | `refactor/refactor` |
 
 ---
 
@@ -26,197 +23,173 @@
 
 ---
 
-## 아키텍처 (ECB)
+## 배경
 
-| 레이어 | 경로 | 역할 |
-|--------|------|------|
-| **Boundary** | `src/boundary/` | 입력 검증, 실패 DTO 반환 (`ValidationErrorResponse`) |
-| **Control** | `src/control/` | `MagicSquareResolver` — 검증 통과 후 Domain 호출 (스텁) |
-| **Entity** | `src/entity/` | 도메인 규칙·계산 (서비스 패키지 GREEN 진행 예정) |
+### 표면에서 보이는 문제 (피해야 할 정의)
 
-**의존 방향:** `boundary → control → entity` (역방향 import 금지)
+“4×4에 1~16을 넣어 합이 같은 마방진 **한 장을 만드는** 프로그램”
 
-**Dual-Track 테스트**
+→ 특정 격자 모양에 성공이 묶이고, **판정·부분 상태·여러 유효 해**가 빠집니다.
 
-| Track | 경로 | Mock |
-|-------|------|------|
-| A (UI/Boundary) | `tests/boundary/` | Control `resolve` Mock 허용 |
-| B (Domain) | `tests/entity/` | Domain Mock **금지** |
+### 실제로 다루는 문제
 
-규칙·TDD 단계: [.cursorrules](.cursorrules), [.cursor/rules/](.cursor/rules/)
+- **대상:** 4×4 격자, 값 1~16 (완성·부분 배치 모두)
+- **1차 목표:** 마방진 **불변식**에 따른 판정 (유효 / 무효 / 미완)
+- **2차 목표(선택):** 조건을 만족하는 **완성 배치**를 얻는 절차
+- **성공 기준:** 임의의 **유효한** 완성 배치 (교재와 다른 배치도 유효할 수 있음)
+- **접근:** 판정 규칙을 먼저 고정하고, **TDD**로 계약·회귀를 통제
 
 ---
 
-## 저장소 구조
+## 핵심 불변식 (Invariant)
 
-```
-MagicSquare_XX/
-├── README.md
-├── .cursorrules
-├── requirements-dev.txt          # pytest, pytest-cov, pydantic
-├── docs/
-│   └── test_plan.md              # AC·시나리오·커버리지 SSOT
-├── Report/                       # 단계별 작업 보고서 (01~10)
-├── Prompt/                       # 세션 transcript
-├── src/
-│   ├── boundary/
-│   │   ├── constants.py          # GRID_SIZE, INVALID_SIZE, 메시지 SSOT
-│   │   ├── schemas.py            # ValidationErrorResponse (pydantic)
-│   │   └── input_validator.py    # validate_grid / handle_input
-│   ├── control/
-│   │   └── magic_square_resolver.py
-│   └── entity/
-│       └── user.py               # 샘플 (TDD 스캐폴드와 별도)
-└── tests/
-    ├── boundary/
-    │   ├── test_input_validator_ac_fr_01_01.py   # AC-FR-01-01 Full RED
-    │   ├── test_u_in.py / test_u_out.py / test_u_flow.py  # Track A 스켈레톤
-    │   └── conftest.py
-    └── entity/
-        ├── test_d_loc_01.py … test_d_sol.py      # Track B 스켈레톤
-        └── conftest.py                           # G0~G3 fixture 주석
-```
-
----
-
-## 개발 환경
-
-- **Python:** 3.10+ (로컬 3.13 확인)
-- **설치:** `pip install -r requirements-dev.txt`
-- **전체 Boundary 테스트:** `python -m pytest tests/boundary/ -v`
-- **AC-FR-01-01 None 분기 (GREEN 확인):**
-
-```bash
-python -m pytest tests/boundary/test_input_validator_ac_fr_01_01.py::TestAcFr0101NormalFailureReturn::test_none_grid_returns_invalid_size_failure_result -v
-```
-
-- **커버리지 (선택):** `pytest --cov=src --cov-report=term-missing`
-
----
-
-## AC-FR-01-01 계약 (형상 검증 앵커)
-
-| 입력 | 기대 |
-|------|------|
-| `grid=None` | `code="INVALID_SIZE"`, `message="Grid must be 4x4."` (문자 단위 동일) |
-| 형상 위반 (`[]`, 3×4, 4×0열 등) | 동일 코드·메시지, **Domain `resolve()` 0회** |
-
-**현재 구현 (GREEN 범위):** `InputValidator.validate_grid()` — `grid is None` 만 반환.  
-`handle_input()`, `[]` / 비정형 크기, U-IN/U-OUT/U-FLOW는 **RED**.
-
-상수 SSOT: `src/boundary/constants.py` (`GRID_SIZE`, `INVALID_SIZE_CODE`, `GRID_SHAPE_ERROR_MESSAGE`)
-
----
-
-## TDD GREEN 커밋 묶음 (권장 순서)
-
-한 커밋 = **Track 하나** + RED 3~5건(또는 동일 분기 1건). Track A·B 동시 GREEN 금지.
-
-### Track A — Boundary
-
-| 묶음 | 내용 | RED 건수 | 비고 |
-|:----:|------|:--------:|------|
-| A-0 | `grid=None` · `validate_grid` | 6 | **GREEN 완료** |
-| A-0b | fixture 범위 검증 (`ScopeLimitation`) | 5 | **GREEN** (프로덕션 불필요) |
-| A-1 | `handle_input(None)` + resolve 격리 | 3 | 다음 권장 |
-| A-2 | `grid=[]` | 4 | |
-| A-3 | `4행×0열` | 3 | |
-| A-4 | `3×4` | 3 | |
-| A-5 | `4×3` | 1 | A-4와 합쳐도 됨 |
-| A-6 | U-IN-04~07 (E002/E003/E004) | 5 | 스켈레톤 `pytest.fail` |
-| A-7 | U-IN-08 + U-FLOW-02 | 3 | |
-| A-8 | U-OUT-01~03 | 3 | |
-
-### Track B — Entity
-
-| 묶음 | 내용 | RED 건수 | 비고 |
-|:----:|------|:--------:|------|
-| B-0 | `src/entity/services/` 패키지 스켈레톤 | — | collection ERROR 해소 선행 |
-| B-1 | D-LOC-01 BlankFinder | 1 | |
-| B-2 | D-MIS-01 MissingNumberFinder | 1 | |
-| B-3 | D-VAL-01~04 합·대각선 | 4 | |
-| B-4 | D-VAL-05~06 `is_valid` | 2 | |
-| B-5 | D-SOL-01 성공 | 1 | |
-| B-6 | D-SOL-03~04 실패 경로 | 2 | |
-| B-7 | D-SOL-02 G2 TBD | 1 | 스펙 확정 후 |
-
-**권장 진행:** A-1 → A-2 → … → A-5 → B-0 → B-1~B-7 → A-6~A-8
-
----
-
-## RED / GREEN 체크리스트 (test_plan 연동)
-
-### Track A — Boundary
-
-- [x] TC-A-01: `grid=None` → 실패 결과 (`validate_grid`)
-- [x] TC-A-02: `code == "INVALID_SIZE"`
-- [x] TC-A-03: `message == "Grid must be 4x4."`
-- [ ] TC-A-04: `grid=None` 시 `resolve()` 0회 (`handle_input` — A-1)
-- [ ] TC-A-05: `grid=[]` → 실패 (A-2)
-- [ ] TC-A-06: 3×4 / 4×3 / 4×0열 등 형상 불일치 (A-3~A-5)
-- [x] TC-A-07: 반환 타입 `ValidationErrorResponse` (`grid=None`)
-
-### Track B — Domain 격리
-
-- [ ] TC-B-01~B-03: Boundary 선행 검증 후 `resolve()` 미호출 (A-1~A-5와 연동)
-- [x] TC-B-04: AC-FR-01-02~05는 별도 스코프 (`ScopeLimitation` fixture 테스트)
-
-### 커버리지 목표 (미달)
-
-- [ ] Domain Logic: 95%+
-- [ ] Boundary Layer: 85%+
-- [ ] 전체: 80%+ (프로젝트 기본선)
-
-### 기타
-
-- [ ] `defect_list.md` 및 결함 추적
-- [ ] GUI 수동 확인 (`boundary/screen/` 추가 후)
-
----
-
-## 배경 · 불변식 · Why
-
-### 표면 vs 실제 문제
-
-- **피할 정의:** “한 장의 마방진을 만드는 프로그램”
-- **실제:** 4×4·1~16에 대한 **판정(유효/무효/미완)** + (선택) 완성 절차, **TDD로 계약 고정**
-
-### 핵심 불변식 (마법상수 34)
+4×4, 1~16 기준 **마법상수 = 34**.
 
 | ID | 요약 |
 |----|------|
-| I1~I3 | 값 범위, 완성 시 1~16 각 1회, 부분 상태 무결 |
-| I4~I6 | 4행·4열·주·부대각선 합 = 34 |
-| I7~I9 | 완성+조건 → 유효; 위반 → 무효; 미완 → 보류 |
-| I10~I12 | 검증은 생성 결과를 신뢰하지 않음; 재현·회귀 |
+| **I1~I3** | 값 범위, 완성 시 1~16 각 1회, 부분 상태에서 중복·범위 위반 없음 |
+| **I4~I6** | 4행·4열·주대각·부대각선 합 = 34 |
+| **I7~I9** | 완성+조건 → 유효; 위반 → 무효; 미완 → 판정 보류 |
+| **I10** | 검증은 생성 결과를 신뢰하지 않음 |
+| **I11~I12** | 동일 입력 → 동일 판정; 대표 예는 규칙 불변 시 회귀 계약 유지 |
 
-상세: [Report/01 — STEP 5](Report/01.Problem-Definition-Report.md#step-5--진짜-문제-정의)
-
----
-
-## 확정 / 미확정
-
-| 항목 | 상태 |
-|------|------|
-| 언어·아키텍처 | Python 3.10+, ECB, pytest |
-| 1차 범위 | Boundary 형상(AC-FR-01-01) → Entity 서비스 → U-IN/OUT/FLOW |
-| 부분 채움(빈 칸) | PRD·test_plan 기준 허용 (2 blanks 등 후속 AC) |
-| 판정 출력 | `{ code, message }` (`ValidationErrorResponse`) |
-| GUI | 미착수 |
-| `docs/PRD_MagicSquare.md` | 저장소에 없음 — `test_plan.md`·Report/07·08 참고 |
+자세한 설명은 [보고서 STEP 5](Report/01.Problem-Definition-Report.md#step-5--진짜-문제-정의)를 참고하세요.
 
 ---
 
-## 관련 문서
+## Why 요약
 
-| 문서 | 설명 |
-|------|------|
-| [Report/01](Report/01.Problem-Definition-Report.md) | 문제 정의 STEP 1~5 |
-| [Report/08](Report/08.AC-FR-01-01-TDD-RED-Work-Export-Report.md) | AC-FR-01-01 RED 25건 |
-| [Report/10](Report/10.MagicSquare-DualTrack-RED-Skeleton-Work-Export-Report.md) | Dual-Track RED 스켈레톤 23건 |
-| [docs/README.md](docs/README.md) | RED To-Do · Golden Master 회귀 안전장치 (GM-01~10) |
-| [docs/test_plan.md](docs/test_plan.md) | pytest 범위·Mock·커버리지 |
-| [docs/golden_master_design.md](docs/golden_master_design.md) | Golden Master approve 패턴 설계 |
+| 단계 | 질문 | 핵심 |
+|------|------|------|
+| **Why #1** | 왜 완성해야 하는가? | 조건 충족을 **격자 상태로 증명**하기 위함. 유일 정답 vs 유효 해, 완성 vs 검증 구분 필요 |
+| **Why #2** | 왜 프로그램인가? | **반복·자동 검증·오류 차단·규칙 명시** — 손계산은 “한 판”, 프로그램은 “절차 고정” |
+| **Why #3** | 왜 TDD인가? | **판정권·불변식·입출력 계약**을 먼저 고정. “그림”이 아니라 “실행 가능한 스펙” |
+
+---
+
+## 훈련하려는 사고 능력
+
+- **불변식 사고** — 말로 된 조건을 검사 가능한 목록으로 분해
+- **판정권·경계** — 생성 vs 검증 분리, 위반 유형 구분
+- **계약·입출력** — Given/Then이 명확한 스펙
+- **재현·회귀** — 같은 규칙의 반복 실행과 대표 예
+- **문제 재정의** — “마방진 프로그램” → “불변식 + 판정 + (선택) 완성 + 재현”
+
+---
+
+## 문서 구조
+
+```
+MagicSquare_XX/
+├── README.md                          ← 이 파일 (프로젝트 개요)
+├── Report/
+│   └── 01.Problem-Definition-Report.md   ← STEP 1~5 전체 보고서
+└── Prompting/                         ← 문제 정의 프롬프트 (있는 경우)
+```
+
+---
+
+## 문제 정의 단계 (완료)
+
+| STEP | 제목 | 내용 |
+|------|------|------|
+| 1 | Observation | 상황 관찰, 4×4 맥락 |
+| 2 | Why #1 | 완성의 동기와 구조적 모호함 |
+| 3 | Why #2 | 프로그램 vs 단순 계산 |
+| 4 | Why #3 | TDD, 통제·불변식·입출력 |
+| 5 | 진짜 문제 정의 | 표면/개선 정의, Invariant, 사고 능력 |
+
+전체 내용: **[Report/01.Problem-Definition-Report.md](Report/01.Problem-Definition-Report.md)**
+
+---
+
+## 아직 확정되지 않은 사항
+
+구현 전에 결정이 필요한 항목입니다.
+
+- [ ] 1차 범위: **검증만** vs **생성 포함**
+- [ ] 부분 채움(빈 칸) 입력 허용 여부
+- [ ] 판정 출력: 통과/실패만 vs **위반 종류** 포함
+- [ ] 프로젝트 맥락: 과제 / 자율 학습 / 기타
+- [ ] 구현 언어·실행 환경
+
+---
+
+## RED 단계 To-Do 리스트
+
+> 이 체크리스트는 test_plan.md 기반으로 생성되었습니다.
+> 각 항목은 RED(실패 테스트 작성) 완료 시 체크합니다.
+
+### Track A — UI / Boundary 테스트
+- [ ] TC-A-01: grid=None 입력 → 실패 결과 반환 (Happy Path of Failure)
+- [ ] TC-A-02: code가 정확히 "INVALID_SIZE" 문자열인지 검증
+- [ ] TC-A-03: message가 "Grid must be 4x4." 와 문자 단위 동일한지 검증
+- [ ] TC-A-04: grid=None 시 Domain 진입점 0회 호출 (mock/spy 검증)
+- [ ] TC-A-05: grid=[] 빈 리스트 → 실패 결과 반환
+- [ ] TC-A-06: grid=3×4 크기 불일치 → 실패 결과 반환
+- [ ] TC-A-07: 반환 객체 타입이 지정 실패 결과 구조체인지 검증
+
+### Track B — Domain / Logic 테스트
+- [ ] TC-B-01: resolve()가 None grid를 직접 받지 않음을 격리 검증
+- [ ] TC-B-02: Boundary가 None 분기를 처리 후 resolve() 미호출 확인
+- [ ] TC-B-03: resolve() mock이 호출됐을 경우 테스트 실패 처리
+- [ ] TC-B-04: AC-FR-01-02~05 범위의 케이스는 이 커밋에 포함하지 않음 확인
+
+### 커버리지 목표
+- [ ] Domain Logic: 95%+ (pip install pytest-cov)
+- [ ] Boundary Layer: 85%+
+- [ ] 전체 TOTAL: 90%+
+
+### 결함 목록 연결
+- [ ] defect_list.md 생성 및 발견 결함 기록
+- [ ] 모든 결함 수정 후 회귀 테스트 통과 확인
+
+---
+
+## 코드 리뷰 기반 To-Do
+
+> code-reviewer 검토 결과 (`refactor/refactor` 기준, 2026-05-29). 우선순위 순.
+
+### P0 — Critical (반드시 수정)
+
+- [ ] **Entity 테스트 수집 오류 수정** — `tests/entity/test_d_*.py`가 존재하지 않는 `src.entity.services.*`를 import하여 pytest 수집 단계에서 중단됨. Boundary RED 스켈레톤(`pytest.fail`) 패턴과 동일하게 정렬
+- [ ] **Golden Master 소스 복원** — `tests/golden_master/`에 `__pycache__`만 남음. `stabilize/green`에서 `.py` 소스·baseline·`pytest.ini` 복원 후 커밋
+- [ ] **InputValidator GREEN 구현** — `validate_grid()` / `handle_input()`의 `NotImplementedError` 제거, AC-FR-01-01 shape 검증 완료
+
+### P1 — Important (수정 권장)
+
+- [ ] **ECB 레이어 정리** — Boundary가 `MagicSquareResolver`를 직접 호출하지 않도록 Control use-case(`SolveMagicSquareUseCase`) 도입
+- [ ] **`MagicSquareResolver` 역할 명확화** — Control은 Entity 서비스 조합(오케스트레이션)만 담당
+- [ ] **Golden Master reference → production 마이그레이션** — `reference_capture.py`의 검증·솔버 로직을 `src/entity/services/`로 이전, drift 방지
+- [ ] **reference_capture 반환 타입 수정** — `_solve_two_blank_grid` 반환 타입을 `SolverResult`로 통일
+- [ ] **하드코딩 제거** — `_is_magic_square`의 literal `4` → `GRID_SIZE`, `"INVALID_VALUE"` → 상수화
+- [ ] **`generate_golden_master.py` `print()` 제거** — `logging`으로 대체 (프로젝트 금지 패턴)
+- [ ] **Boundary 테스트 공백 보완** — BV-06 (`5×5` grid), `four_by_three` message exact match 테스트 추가
+- [ ] **README 상태 갱신** — 프로젝트 상태 테이블을 RED/TDD 진행 중으로 유지
+
+### P2 — Minor (개선)
+
+- [ ] Boundary 테스트 literal 중복 제거 — 상수 import 후 `"INVALID_SIZE"` 등 재하드코딩 정리, parametrization 검토
+- [ ] Fixture 안전성 — `[[]] * 4` → `[[] for _ in range(4)]` (행 alias 방지)
+- [ ] `User` entity scaffold 정리 — 도메인과 무관하면 `examples/` 이동 또는 제거
+- [ ] Entity conftest G0–G3 fixture — Boundary와 grid SSOT 통일 (`tests/conftest.py` 또는 `tests/fixtures/grids.py`)
+- [ ] `pytest.ini` 복원 — `golden_master` marker 등 CI 필터 설정
+
+### 브랜치 참고
+
+Golden Master·partial GREEN 작업은 `stabilize/green`에 있습니다.
+
+```powershell
+git diff refactor/refactor..stabilize/green -- tests/golden_master scripts tests/integration docs/golden_master_design.md
+```
+
+---
+
+## 다음 단계 (권장)
+
+1. **P0 Critical** 항목부터 처리 (Entity 수집 오류 → Golden Master 복원 → InputValidator GREEN)
+2. RED 체크리스트 항목 완료 및 GREEN 전환
+3. P1 ECB 레이어 정리 후 Entity 서비스 구현 착수
 
 ---
 
@@ -226,4 +199,4 @@ python -m pytest tests/boundary/test_input_validator_ac_fr_01_01.py::TestAcFr010
 
 ---
 
-*최종 업데이트: 2026-05-29 — TDD GREEN 진행 (AC-FR-01-01 `grid=None`), ECB·Dual-Track·커밋 묶음 반영*
+*최종 업데이트: 2026-05-29 — RED/TDD + 코드 리뷰 To-Do 반영*
