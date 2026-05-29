@@ -1,7 +1,7 @@
 # MagicSquare_XX
 
 4×4 마방진(1~16)을 다루는 학습·실습 프로젝트입니다.  
-현재 단계는 **구현 이전의 문제 정의**이며, “한 장의 표를 만드는 것”보다 **불변식 판정·재현 가능한 절차·명시적 계약**을 다루는 것을 목표로 합니다.
+현재 단계는 **RED/TDD**이며, “한 장의 표를 만드는 것”보다 **불변식 판정·재현 가능한 절차·명시적 계약**을 다루는 것을 목표로 합니다.
 
 ---
 
@@ -11,7 +11,9 @@
 |------|------|
 | 문제 정의 (STEP 1~5) | 완료 |
 | 상세 보고서 | [Report/01.Problem-Definition-Report.md](Report/01.Problem-Definition-Report.md) |
-| 구현 | 미착수 |
+| 테스트 계획 | [docs/test_plan.md](docs/test_plan.md) |
+| 구현 | RED 진행 중 (Boundary/Control stub, Entity 미구현) |
+| 현재 브랜치 | `refactor/refactor` |
 
 ---
 
@@ -144,11 +146,50 @@ MagicSquare_XX/
 
 ---
 
+## 코드 리뷰 기반 To-Do
+
+> code-reviewer 검토 결과 (`refactor/refactor` 기준, 2026-05-29). 우선순위 순.
+
+### P0 — Critical (반드시 수정)
+
+- [ ] **Entity 테스트 수집 오류 수정** — `tests/entity/test_d_*.py`가 존재하지 않는 `src.entity.services.*`를 import하여 pytest 수집 단계에서 중단됨. Boundary RED 스켈레톤(`pytest.fail`) 패턴과 동일하게 정렬
+- [ ] **Golden Master 소스 복원** — `tests/golden_master/`에 `__pycache__`만 남음. `stabilize/green`에서 `.py` 소스·baseline·`pytest.ini` 복원 후 커밋
+- [ ] **InputValidator GREEN 구현** — `validate_grid()` / `handle_input()`의 `NotImplementedError` 제거, AC-FR-01-01 shape 검증 완료
+
+### P1 — Important (수정 권장)
+
+- [ ] **ECB 레이어 정리** — Boundary가 `MagicSquareResolver`를 직접 호출하지 않도록 Control use-case(`SolveMagicSquareUseCase`) 도입
+- [ ] **`MagicSquareResolver` 역할 명확화** — Control은 Entity 서비스 조합(오케스트레이션)만 담당
+- [ ] **Golden Master reference → production 마이그레이션** — `reference_capture.py`의 검증·솔버 로직을 `src/entity/services/`로 이전, drift 방지
+- [ ] **reference_capture 반환 타입 수정** — `_solve_two_blank_grid` 반환 타입을 `SolverResult`로 통일
+- [ ] **하드코딩 제거** — `_is_magic_square`의 literal `4` → `GRID_SIZE`, `"INVALID_VALUE"` → 상수화
+- [ ] **`generate_golden_master.py` `print()` 제거** — `logging`으로 대체 (프로젝트 금지 패턴)
+- [ ] **Boundary 테스트 공백 보완** — BV-06 (`5×5` grid), `four_by_three` message exact match 테스트 추가
+- [ ] **README 상태 갱신** — 프로젝트 상태 테이블을 RED/TDD 진행 중으로 유지
+
+### P2 — Minor (개선)
+
+- [ ] Boundary 테스트 literal 중복 제거 — 상수 import 후 `"INVALID_SIZE"` 등 재하드코딩 정리, parametrization 검토
+- [ ] Fixture 안전성 — `[[]] * 4` → `[[] for _ in range(4)]` (행 alias 방지)
+- [ ] `User` entity scaffold 정리 — 도메인과 무관하면 `examples/` 이동 또는 제거
+- [ ] Entity conftest G0–G3 fixture — Boundary와 grid SSOT 통일 (`tests/conftest.py` 또는 `tests/fixtures/grids.py`)
+- [ ] `pytest.ini` 복원 — `golden_master` marker 등 CI 필터 설정
+
+### 브랜치 참고
+
+Golden Master·partial GREEN 작업은 `stabilize/green`에 있습니다.
+
+```powershell
+git diff refactor/refactor..stabilize/green -- tests/golden_master scripts tests/integration docs/golden_master_design.md
+```
+
+---
+
 ## 다음 단계 (권장)
 
-1. 위 체크리스트 항목 확정  
-2. 행동 명세 수준의 **대표 시나리오·테스트 목록** 작성 (구현 없이)  
-3. 검증 계약을 먼저 고정한 뒤 구현 착수 (TDD)
+1. **P0 Critical** 항목부터 처리 (Entity 수집 오류 → Golden Master 복원 → InputValidator GREEN)
+2. RED 체크리스트 항목 완료 및 GREEN 전환
+3. P1 ECB 레이어 정리 후 Entity 서비스 구현 착수
 
 ---
 
@@ -158,4 +199,4 @@ MagicSquare_XX/
 
 ---
 
-*최종 업데이트: 2026-05-28 — 문제 정의 STEP 1~5 기준*
+*최종 업데이트: 2026-05-29 — RED/TDD + 코드 리뷰 To-Do 반영*
