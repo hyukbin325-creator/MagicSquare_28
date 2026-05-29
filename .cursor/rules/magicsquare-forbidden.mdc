@@ -1,0 +1,27 @@
+---
+description: 금지 패턴과 권장 대안
+alwaysApply: true
+---
+
+# MagicSquare Forbidden Patterns
+
+## Forbidden
+
+### `print()`
+
+- Reason: Debug output pollutes operational logs and reduces test reliability.
+- Alternative: Use `logging` (`logger.debug/info`) or pytest capture tools.
+
+### Hardcoded constants
+
+- Reason: Hidden meaning increases maintenance cost during change.
+- Alternative: Move to constants modules, config files, or environment variables.
+
+### Bare `except:`
+
+- Reason: Hides root causes and harms incident diagnosis/recovery.
+- Alternative: Use explicit exception types (`except SpecificError as e`) and re-raise when needed.
+
+## Review Rule
+
+- Reject code introducing forbidden patterns without explicit exception rationale.

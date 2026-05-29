@@ -1,0 +1,122 @@
+################################################################################
+project:
+  name: "MagicSquare"
+  language: "Python"
+  description: "ECB 아키텍처와 TDD 원칙을 따르는 MagicSquare 프로젝트"
+
+################################################################################
+code_style:
+  python_version: "3.10+"
+  style_guide: "PEP8 엄격 준수"
+  type_hints: "모든 함수 파라미터와 반환값에 필수"
+  docstring: "Google 스타일, 모든 public 메서드에 필수"
+  max_line_length: 88
+
+################################################################################
+architecture:
+  pattern: "ECB"
+  layers:
+    boundary:
+      role: "외부 입출력 담당 (UI, API, CLI)"
+      responsibilities:
+        - "사용자/외부 시스템 요청 수신 및 응답 반환"
+        - "입력 파싱 및 출력 포맷 변환"
+    control:
+      role: "비즈니스 로직 담당"
+      responsibilities:
+        - "유스케이스 흐름 제어"
+        - "엔티티 규칙 조합 및 실행"
+    entity:
+      role: "도메인 데이터 및 규칙 담당"
+      responsibilities:
+        - "핵심 도메인 상태와 불변성 관리"
+        - "도메인 규칙과 계산 책임 보유"
+  dependency_direction:
+    allowed:
+      - "boundary -> control"
+      - "control -> entity"
+    disallowed:
+      - "entity -> control"
+      - "entity -> boundary"
+      - "control -> boundary"
+
+################################################################################
+tdd_rules:
+  red_phase:
+    description: "요구사항을 검증하는 실패 테스트를 먼저 작성하는 단계"
+    rules:
+      - "테스트를 먼저 작성한다."
+      - "새 테스트가 실패함을 실행으로 확인한다."
+      - "실패 원인이 요구사항 미구현임을 확인한다."
+    must_not:
+      - "RED 확인 전에 구현 코드를 작성하지 않는다."
+      - "실패 테스트를 임의로 수정해 통과시키지 않는다."
+  green_phase:
+    description: "실패 테스트를 통과시키기 위한 최소 구현만 추가하는 단계"
+    rules:
+      - "테스트를 통과시키는 최소 코드만 작성한다."
+      - "변경 범위는 현재 실패 테스트 해결에 한정한다."
+      - "전체 테스트를 실행해 회귀 여부를 확인한다."
+    must_not:
+      - "구조 개선 목적의 리팩터링을 수행하지 않는다."
+      - "향후 기능을 위한 선제 구현을 추가하지 않는다."
+  refactor_phase:
+    description: "동작을 유지한 채 가독성과 구조를 개선하는 단계"
+    rules:
+      - "외부 동작 변화 없이 중복 제거와 구조 개선을 수행한다."
+      - "리팩터링 전후로 테스트를 실행해 동등성을 확인한다."
+      - "테스트 커버리지를 최소 기준 이상으로 유지한다."
+    must_not:
+      - "새 기능을 추가하거나 기존 기능 동작을 변경하지 않는다."
+      - "커버리지를 낮추거나 테스트를 삭제하지 않는다."
+
+################################################################################
+testing:
+  framework: "pytest"
+  pattern: "AAA (Arrange-Act-Assert)"
+  coverage_minimum: "80%"
+  fixture_scope:
+    default: "function"
+    allowed:
+      - "function: 기본값, 테스트 간 상태 공유 금지"
+      - "module: 무거운 초기화에 한해 제한적으로 사용"
+      - "session: 외부 리소스 초기화에 한해 팀 합의 후 사용"
+  naming_convention: "test_ 접두사 필수"
+
+################################################################################
+forbidden:
+  - pattern: "print()"
+    reason: "디버그 출력이 운영 로그를 오염시키고 테스트 신뢰도를 낮춤"
+    alternative: "logging 모듈(logger.debug/info) 또는 pytest 캡처 활용"
+  - pattern: "하드코딩 상수"
+    reason: "의미가 불분명하고 변경 시 유지보수 비용 증가"
+    alternative: "상수 모듈, 설정 파일, 환경 변수로 분리"
+  - pattern: "except:"
+    reason: "모든 예외를 숨겨 장애 원인 추적과 복구를 어렵게 만듦"
+    alternative: "except SpecificError as e: 형태로 명시적 처리 후 재전파"
+
+################################################################################
+file_structure:
+  root: "src"
+  # ECB 기준 폴더 구조
+  # src/
+  #   boundary/
+  #   control/
+  #   entity/
+  # tests/
+  #   boundary/
+  #   control/
+  #   entity/
+
+################################################################################
+ai_behavior:
+  before_coding:
+    - "코드 작성 전 관련 테스트 파일과 기존 테스트 의도를 확인한다."
+    - "요구사항에 대응하는 테스트 케이스 누락 여부를 먼저 점검한다."
+  during_coding:
+    - "ECB 레이어 경계를 위반하는 import/호출을 생성하지 않는다."
+    - "타입 힌트 없는 함수를 생성하지 않는다."
+    - "RED 확인 없이 구현을 진행하지 않는다."
+  after_coding:
+    - "변경된 코드와 관련 테스트를 실행해 통과 여부를 확인한다."
+    - "tdd_rules 위반이 감지되면 경고를 출력하고 수정 제안을 제공한다."
