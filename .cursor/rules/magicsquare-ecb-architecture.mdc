@@ -1,0 +1,42 @@
+---
+description: ECB 아키텍처 계층 책임과 의존 방향 규칙
+alwaysApply: true
+---
+
+# MagicSquare ECB Architecture
+
+## Layer Responsibilities
+
+### Boundary
+
+- Handles external input/output (UI, API, CLI).
+- Receives requests and returns responses.
+- Parses input and transforms output formats.
+
+### Control
+
+- Owns use-case orchestration and business flow.
+- Composes and executes entity-level domain rules.
+
+### Entity
+
+- Owns core domain state and invariants.
+- Contains domain calculations and rules.
+
+## Dependency Direction
+
+### Allowed
+
+- `boundary -> control`
+- `control -> entity`
+
+### Disallowed
+
+- `entity -> control`
+- `entity -> boundary`
+- `control -> boundary`
+
+## Enforcement Notes
+
+- Prefer dependency injection over reverse imports.
+- Reject changes that introduce layer boundary violations.

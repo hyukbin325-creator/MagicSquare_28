@@ -1,0 +1,43 @@
+---
+description: MagicSquare 프로젝트 공통 컨텍스트와 기본 작업 원칙
+alwaysApply: true
+---
+
+# MagicSquare Project Context
+
+## Project Overview
+
+- Project name: MagicSquare
+- Primary language: Python 3.10+
+- Goal: ECB architecture and TDD-driven development
+
+## Recommended Structure
+
+```text
+src/
+  boundary/
+  control/
+  entity/
+tests/
+  boundary/
+  control/
+  entity/
+```
+
+## AI Working Behavior
+
+### Before coding
+
+- Review related tests and understand existing test intent first.
+- Check for missing test cases mapped to requirements.
+
+### During coding
+
+- Do not generate imports or calls that violate ECB boundaries.
+- Do not create functions without type hints.
+- Do not implement before confirming RED in TDD flow.
+
+### After coding
+
+- Run changed code and related tests, then verify pass status.
+- If TDD rule violations are detected, warn and suggest fixes.

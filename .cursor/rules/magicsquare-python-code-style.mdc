@@ -1,0 +1,28 @@
+---
+description: Python 코드 스타일 및 정적 품질 기준
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# MagicSquare Python Code Style
+
+## Baseline
+
+- Python version: 3.10+
+- Follow PEP 8 strictly.
+- Max line length: 88
+
+## Type Hints
+
+- All function parameters must have type annotations.
+- All function return values must have type annotations.
+
+## Docstrings
+
+- Use Google-style docstrings.
+- Every public method/function must include a docstring.
+
+## Quality Expectations
+
+- Prefer explicit names over abbreviations.
+- Keep functions focused and side effects clear.

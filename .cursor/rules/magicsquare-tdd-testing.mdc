@@ -1,0 +1,45 @@
+---
+description: TDD 사이클, pytest 기준, 테스트 작성 규칙
+alwaysApply: true
+---
+
+# MagicSquare TDD and Testing
+
+## Testing Baseline
+
+- Framework: `pytest`
+- Pattern: AAA (Arrange-Act-Assert)
+- Minimum coverage: 80%
+- Test names must start with `test_`
+
+## Fixture Scope Policy
+
+- `function`: default, no shared state between tests.
+- `module`: only for limited heavy initialization.
+- `session`: only for external resources by team agreement.
+
+## TDD Phases
+
+### RED
+
+- Write a failing test first.
+- Execute and confirm failure.
+- Confirm failure is due to missing implementation.
+- Must not implement before RED confirmation.
+- Must not alter tests only to force pass.
+
+### GREEN
+
+- Add only the minimum code to pass the failing test.
+- Limit changes to the current failing test scope.
+- Run full tests to check regressions.
+- Must not perform structure-focused refactoring in this phase.
+- Must not add speculative future features.
+
+### REFACTOR
+
+- Improve structure/readability without behavior changes.
+- Run tests before and after refactor for equivalence.
+- Keep coverage at or above project threshold.
+- Must not add new features or change behavior.
+- Must not reduce coverage or remove tests.
