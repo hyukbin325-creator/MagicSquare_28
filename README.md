@@ -214,7 +214,9 @@ python -m pytest tests/boundary/test_input_validator_ac_fr_01_01.py::TestAcFr010
 | [Report/01](Report/01.Problem-Definition-Report.md) | 문제 정의 STEP 1~5 |
 | [Report/08](Report/08.AC-FR-01-01-TDD-RED-Work-Export-Report.md) | AC-FR-01-01 RED 25건 |
 | [Report/10](Report/10.MagicSquare-DualTrack-RED-Skeleton-Work-Export-Report.md) | Dual-Track RED 스켈레톤 23건 |
+| [docs/README.md](docs/README.md) | RED To-Do · Golden Master 회귀 안전장치 (GM-01~10) |
 | [docs/test_plan.md](docs/test_plan.md) | pytest 범위·Mock·커버리지 |
+| [docs/golden_master_design.md](docs/golden_master_design.md) | Golden Master approve 패턴 설계 |
 
 ---
 
