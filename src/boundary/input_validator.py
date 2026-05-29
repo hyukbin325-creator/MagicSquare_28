@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.boundary.constants import GRID_SHAPE_ERROR_MESSAGE, INVALID_SIZE_CODE
 from src.boundary.schemas import ValidationErrorResponse
 
 if TYPE_CHECKING:
@@ -18,6 +19,16 @@ class InputValidator:
 
     def validate_grid(self, grid: object) -> ValidationErrorResponse | None:
         """Return a validation error when shape is invalid; None when shape is 4x4."""
+        if grid is None:
+            return ValidationErrorResponse(
+                code=INVALID_SIZE_CODE,
+                message=GRID_SHAPE_ERROR_MESSAGE,
+            )
+        if isinstance(grid, list) and len(grid) == 0:
+            return ValidationErrorResponse(
+                code=INVALID_SIZE_CODE,
+                message=GRID_SHAPE_ERROR_MESSAGE,
+            )
         raise NotImplementedError("GREEN phase: AC-FR-01-01 shape validation")
 
     def handle_input(self, grid: object) -> ValidationErrorResponse | list[int]:
